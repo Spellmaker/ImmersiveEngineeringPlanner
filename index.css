@@ -9,8 +9,11 @@ body {
     
 }
 
+.search-input {
+    width: 80%;
+}
+
 #left-panel {
-    
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -21,14 +24,24 @@ body {
 }
 
 #selected-panel {
-    
+    border: 1px solid black;
+    padding: 5px;
 }
 
 #inventory-panel {
-    
+    border: 1px solid black;
+    padding: 5px;
 }
 
 #right-panel {
     
     flex-grow: 1;
+}
+
+input {
+    margin: 5px;
+}
+
+button {
+    margin: 5px;
 }
