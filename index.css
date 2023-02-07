@@ -1,0 +1,34 @@
+body {
+    
+}
+
+#app {
+    width: 100%;
+    
+    display: flex;
+    
+}
+
+#left-panel {
+    
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#components-panel {
+    
+}
+
+#selected-panel {
+    
+}
+
+#inventory-panel {
+    
+}
+
+#right-panel {
+    
+    flex-grow: 1;
+}
