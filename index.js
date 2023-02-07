@@ -85,7 +85,7 @@ const recipes = [
             }
         ]
     },
-    recipe("Steel Rod", 2, "Steel Ingot", 2),
+    recipe("Steel Rod", 2, "Steel Ingot", 1),
     recipe("Redstone Engineering Block", 1, "Iron Plate", 4, "Redstone Alloy Plate", 4, "Vacuum Tube", 1),
     recipe("Vacuum Tube", 3, "Glass", 1, "Nickel Plate", 1, "Copper Wire", 1, "Redstone", 1),
     recipe("Light Engineering Block", 2, "Iron Ingot", 4, "Copper Ingot", 3, "Iron Mechanical Component", 2),
@@ -143,10 +143,23 @@ function toggleStacks() {
     updateView();
 }
 
-function decomposeRecipe(name, neededAmount, shadowInventory) {
+function decomposeRecipe(name, neededAmount, shadowInventory, graph) {
     const found = recipes.find((r) => r.name == name);
+
+    const currentNode = {
+        name: name,
+        amount: -1,
+        iterations: -1,
+        fromPool: 0,
+        children: [],
+    };
+
+    graph.push(currentNode);
     
     if (!found) {
+        currentNode.name = name;
+        currentNode.amount = neededAmount;
+        currentNode.iterations = 0;
         return [{
             name: name,
             amount: neededAmount,
@@ -158,8 +171,10 @@ function decomposeRecipe(name, neededAmount, shadowInventory) {
     /* check if any components are already in inventory */
     console.log(shadowInventory);
     const inventoryEntry = shadowInventory.find(e => e.recipe.name == name);
+    currentNode.fromPool = 0;
     if (inventoryEntry) {
         produced = inventoryEntry.amount;
+        currentNode.fromPool = Math.min(inventoryEntry.amount, neededAmount);
         inventoryEntry.amount -= neededAmount;
         if (inventoryEntry.amount < 0) {
             inventoryEntry.amount = 0;
@@ -170,6 +185,9 @@ function decomposeRecipe(name, neededAmount, shadowInventory) {
         iterations++;
         produced += found.amount;
     }
+
+    currentNode.iterations = iterations;
+    currentNode.amount = produced - currentNode.fromPool;
 
     if (iterations <= 0) {
         return [];
@@ -188,7 +206,7 @@ function decomposeRecipe(name, neededAmount, shadowInventory) {
         }
     }
 
-    return found.recipe.flatMap(component => decomposeRecipe(component.name, component.amount * iterations, shadowInventory));
+    return found.recipe.flatMap(component => decomposeRecipe(component.name, component.amount * iterations, shadowInventory, currentNode.children));
 }
 
 function updateAmount(id, isSelection) {
@@ -239,6 +257,25 @@ function inventoryCopy() {
     return result;
 }
 
+function renderGraph(graph, prefix) {
+    if (!prefix) {
+        prefix = "";
+    }
+/*
+        name: name,
+        amount: -1,
+        iterations: -1,
+        fromPool: 0,
+        children: [],*/
+
+    let result = "";
+    graph.forEach(g => {
+        result += prefix + g.name + " Amt: " + g.amount + " Iterations: " + g.iterations + " from pool: " + g.fromPool + "<br />";
+        result += renderGraph(g.children, prefix + "<span class='graph-tab'></span>");
+    });
+    return result;
+}
+
 function updateView() {
     localStorage.recipeSelection = JSON.stringify(selection);
     localStorage.inventory = JSON.stringify(inventory);
@@ -250,8 +287,10 @@ function updateView() {
 
     resultsPanel.innerHTML = "";
     const computeInventory = inventoryCopy();
+    let graph = [];
 
-    const step1 = selection.flatMap((e) => decomposeRecipe(e.recipe.name, e.amount, computeInventory));
+    const step1 = selection.flatMap((e) => decomposeRecipe(e.recipe.name, e.amount, computeInventory, graph));
+    console.log(graph);
 
     const decomposed = [];
     step1.forEach(e => {
@@ -270,6 +309,9 @@ function updateView() {
     decomposed.forEach(d => inner += renderIngredient(d));
     inner += "</table>";
     inner += "<input type='checkbox' onChange='toggleStacks()'>Show Stacks";
+
+    inner += "<br /><br />Crafting helper:<br />";
+    inner += renderGraph(graph);
     resultsPanel.innerHTML = inner;
 }
 
