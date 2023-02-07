@@ -144,8 +144,6 @@ function toggleStacks() {
 }
 
 function decomposeRecipe(name, neededAmount, shadowInventory) {
-    // TODO
-    
     const found = recipes.find((r) => r.name == name);
     
     if (!found) {
@@ -176,6 +174,20 @@ function decomposeRecipe(name, neededAmount, shadowInventory) {
     if (iterations <= 0) {
         return [];
     }
+
+    /* place any excess produce into the shadow inventory */
+    if (produced > neededAmount) {
+        let newEntry = shadowInventory.find(e => e.recipe.name == name);
+        if (newEntry) {
+            newEntry.amount += produced - neededAmount;
+        } else {
+            shadowInventory.push({
+                recipe: found.recipe,
+                amount: produced - neededAmount,
+            });
+        }
+    }
+
     return found.recipe.flatMap(component => decomposeRecipe(component.name, component.amount * iterations, shadowInventory));
 }
 
