@@ -252,6 +252,7 @@ function renderSelected(selectedElement, isSelection) {
     if (!isSelection) {
         stringPart = "inventory";
     }
+    console.log(selectedElement);
     return "<div class='"+ stringPart + "-element'><input type='number' id='input-"+ stringPart +"-"+ selectedElement.recipe.id + "' onInput='updateAmount(\"" + selectedElement.recipe.id + "\", " + isSelection + ")' value='"+ selectedElement.amount +"'/>" + selectedElement.recipe.name + "</div>"
 }
 
@@ -394,7 +395,14 @@ function updateView() {
 
 function addElement(name, isSelection) {
     console.log(isSelection);
-    const recipe = recipes.find((e) => e.name == name);
+    let recipe = recipes.find((e) => e.name == name);
+
+    if (!recipe) {
+        recipe = {
+            name: name,
+            recipe: [],
+        };
+    }
 
     let arrayToUpdate = selection;
     if (!isSelection) {
@@ -414,9 +422,13 @@ function addElement(name, isSelection) {
     updateView();
 }
 
-function makeElement(recipe) {
+function makeElement(recipe, hasPlan) {
+    let planButton = "";
+    if (hasPlan) {
+        planButton = "<button onClick='addElement(\"" + recipe.name + "\", true)'>Add To Plan</button>";
+    }
     return "<div class='recipe-element'>" +
-        "<button onClick='addElement(\"" + recipe.name + "\", true)'>Add To Plan</button>" + 
+        planButton  +
         "<button onClick='addElement(\"" + recipe.name + "\", false)'>Add To Inventory</button>" + 
         recipe.name + 
         "</div>";
@@ -427,8 +439,34 @@ function makeSearchContents(filter) {
 
     searchContents.innerHTML = "";
     toShow.forEach((element) => {
-        searchContents.innerHTML += makeElement(element);
+        searchContents.innerHTML += makeElement(element, true);
     });
+    let leaves = recipes
+        .flatMap(e => recipeLeaves(e))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+
+    let sortedLeaves = [];
+    leaves.forEach(l => {
+        if (!sortedLeaves.find(x => x.name == l.name)) {
+            sortedLeaves.push(l);
+        }
+    });
+
+    sortedLeaves.forEach((element) => {
+        searchContents.innerHTML += makeElement(element, false);
+    });
+
+}
+
+function recipeLeaves(node) {
+    let result = [];
+    node.recipe.forEach((recipe) => {
+        if (!recipes.find(r => r.name == recipe.name)) {
+            result.push(recipe);
+        }
+    });
+    return result;
 }
 
 
