@@ -136,15 +136,18 @@ if (localStorage.recipeSelection) {
     parsed.forEach((r) => {
         selection.push(r);
     })
+    console.log(typeof selection);
 }
 
 const inventory = [];
 if (localStorage.inventory) {
+    console.log(typeof inventory);
     const parsed = JSON.parse(localStorage.inventory);
     parsed.forEach((r) => {
         inventory.push(r);
     })
-
+    console.log(typeof inventory);
+    inventory.findIndex(s => true);
 }
 
 const searchContents = document.getElementById("search-contents");
@@ -178,9 +181,21 @@ function decomposeRecipe(name, neededAmount, shadowInventory, graph) {
         currentNode.name = name;
         currentNode.amount = neededAmount;
         currentNode.iterations = 0;
+
+        /* check inventory */
+        let inventoryEntry = shadowInventory.find(i => i.recipe.name == name);
+        let presentAmount = 0;
+        if (inventoryEntry) {
+            presentAmount = inventoryEntry.amount;
+            inventoryEntry = Math.max(0, inventoryEntry.amount - neededAmount);
+        }
+
+        if (presentAmount >= neededAmount) {
+            return [];
+        }
         return [{
             name: name,
-            amount: neededAmount,
+            amount: neededAmount - presentAmount,
         }];
     }
     let produced = 0;
@@ -228,6 +243,7 @@ function decomposeRecipe(name, neededAmount, shadowInventory, graph) {
 }
 
 function updateAmount(id, isSelection) {
+    console.log("updateAmount for id " + id + " with selection " + isSelection);
     let prefix = "selection";
     if (!isSelection) {
         prefix = "inventory";
@@ -238,11 +254,14 @@ function updateAmount(id, isSelection) {
     if (!isSelection) {
         arrayToUpdate = inventory;
     }
+    console.log(arrayToUpdate);
+    console.log(arrayToUpdate.find);
+    console.log(typeof arrayToUpdate);
 
     if (element.value == 0) {
         arrayToUpdate.splice(arrayToUpdate.findIndex((e) => e.recipe.id == id), 1);
     } else {
-        arrayToUpdate.find((e) => e.recipe.id == id).amount = element.value;
+        arrayToUpdate.find(e => e.recipe.id == id).amount = element.value;
     }
     updateView();
 }
@@ -253,7 +272,11 @@ function renderSelected(selectedElement, isSelection) {
         stringPart = "inventory";
     }
     console.log(selectedElement);
-    return "<div class='"+ stringPart + "-element'><input type='number' id='input-"+ stringPart +"-"+ selectedElement.recipe.id + "' onInput='updateAmount(\"" + selectedElement.recipe.id + "\", " + isSelection + ")' value='"+ selectedElement.amount +"'/>" + selectedElement.recipe.name + "</div>"
+    let idToUse = selectedElement.recipe.id;
+    if (!idToUse) {
+        idToUse = selectedElement.recipe.name.replace(" ", "-").toLowerCase();
+    }
+    return "<div class='"+ stringPart + "-element'><input type='number' id='input-"+ stringPart +"-"+ idToUse + "' onInput='updateAmount(\"" + idToUse + "\", " + isSelection + ")' value='"+ selectedElement.amount +"'/>" + selectedElement.recipe.name + "</div>"
 }
 
 function renderAmount(amount) {
@@ -394,6 +417,8 @@ function updateView() {
 }
 
 function addElement(name, isSelection) {
+    
+    console.log("addElement with " + name);
     console.log(isSelection);
     let recipe = recipes.find((e) => e.name == name);
 
@@ -401,6 +426,7 @@ function addElement(name, isSelection) {
         recipe = {
             name: name,
             recipe: [],
+            id: name.replace(" ", "-").toLowerCase(),
         };
     }
 
