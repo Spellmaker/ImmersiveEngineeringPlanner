@@ -2,6 +2,18 @@ body {
     
 }
 
+.g-hovered {
+    background-color: yellow;
+}
+
+.graph-summarized {
+    padding: 5px;
+}
+
+.summary-container {
+    padding: 5px;
+}
+
 .graph-tab {
     width: 10px;
     display: inline-block;
